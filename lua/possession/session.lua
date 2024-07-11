@@ -290,6 +290,7 @@ function M.close(force)
         return
     end
 
+    plugins.before_close(force)
     utils.delete_all_buffers(force)
     utils.stop_lsp_clients()
     state.session_name = nil
