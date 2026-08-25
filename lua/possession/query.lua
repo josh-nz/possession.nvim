@@ -27,9 +27,9 @@ end
 function M.filter_by(sessions, opts)
     -- Normalize both sides: `opts.cwd` may come from paths.absolute_dir() (slash-normalized via
     -- vim.fs), while stored session `cwd`s may still use native (e.g. backslash on Windows) separators.
-    local cwd = vim.fs.normalize(vim.fs.abspath(opts.cwd))
+    local cwd = utils.abspath(opts.cwd)
     return vim.tbl_filter(function(s)
-        return vim.fs.normalize(vim.fs.abspath(s.cwd)) == cwd
+        return utils.abspath(s.cwd) == cwd
     end, sessions)
 end
 

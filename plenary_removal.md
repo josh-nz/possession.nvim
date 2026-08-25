@@ -44,3 +44,25 @@ Verified with headless `nvim` (no plenary.nvim anywhere): session save/list/rena
 `paths.absolute_dir`, `utils.relative_path` (nested/tilde/unrelated/equal cases), `query.filter_by`
 across mismatched separator styles, `migrate.migrate`, and `display.parse_mksession`'s
 buffer-path resolution - all 17 checks passed.
+
+
+## Third pass
+
+A review of the second-pass commit turned up `vim.fs.normalize(vim.fs.abspath(...))` repeated 10
+times across 8 files (`display.lua` and `query.lua` each had it twice). Added `utils.abspath(...)`
+- joins path segments (if more than one given) and resolves to a normalized absolute path - and
+migrated 9 of the 10 call sites to it: `display.lua` (x2), `session.lua`, `paths.lua`,
+`migrate.lua`, `query.lua` (x2), `logging.lua`, and `utils.lua`'s own `relative_path`.
+
+`config.lua`'s occurrence was left inline, with a comment explaining why: `utils.lua` requires
+`config.lua` at module scope, so `config.lua` requiring `utils.lua` back would be a circular
+require.
+
+`logging.lua` needed a new `require('possession.utils')` to reach the helper. Checked this doesn't
+reintroduce a cycle: `utils.lua`'s own dependency on `logging.lua` is a lazy, function-scoped
+require (inside `M.debug`/`M.info`/`M.warn`/`M.error`), not a module-top-level one, so there's no
+load-order conflict. Verified directly by loading `possession.logging` first, before anything else
+touches `config`/`utils`, and confirming `logging.to_all` and `utils.abspath` both work.
+
+Re-ran the full end-to-end test suite from the second pass - all checks still pass after the
+refactor.

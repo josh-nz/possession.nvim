@@ -382,7 +382,7 @@ function M.list(opts)
     local files_by_name = {}
 
     local sessions = {}
-    local glob = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(config.session_dir, '*.json')))
+    local glob = utils.abspath(config.session_dir, '*.json')
     for _, file in ipairs(vim.fn.glob(glob, true, true)) do
         if vim.fn.filereadable(file) ~= 0 then
             local data = vim.json.decode(vim.fn.readblob(file))

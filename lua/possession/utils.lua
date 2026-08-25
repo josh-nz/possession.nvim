@@ -273,6 +273,13 @@ function M.for_each_tab(tabs, fn)
     vim.api.nvim_set_current_tabpage(initial)
 end
 
+--- Join path segments (if more than one given) and resolve to a normalized absolute path
+---@param ... string path segments, as for vim.fs.joinpath
+---@return string
+function M.abspath(...)
+    return vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(...)))
+end
+
 --- Make relative path (only if 'path' is child of 'rel_to' or 'force' is set), replace '~' unless normalize=false
 ---@param path string
 ---@param rel_to string
@@ -284,7 +291,7 @@ function M.relative_path(path, rel_to, opts)
         normalize = true,
     }, opts or {})
 
-    local abs_path = vim.fs.normalize(vim.fs.abspath(path))
+    local abs_path = M.abspath(path)
 
     -- Try to make `path` relative to `rel_to`; unless forced, fall back to relative to the
     -- actual cwd (matching plenary's Path:normalize() using its lazily-computed `_cwd`).

@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require('possession.config')
+local utils = require('possession.utils')
 
 local log_date_format = '%F %H:%M:%S'
 local log_levels = vim.deepcopy(vim.log.levels)
@@ -25,7 +26,7 @@ local function get_logfile()
     -- Use default name
     local filename = config.logfile
     if type(filename) ~= 'string' then
-        filename = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(vim.fn.stdpath('log'), 'possession.log')))
+        filename = utils.abspath(vim.fn.stdpath('log'), 'possession.log')
     end
 
     local file, err = io.open(filename, 'a+')

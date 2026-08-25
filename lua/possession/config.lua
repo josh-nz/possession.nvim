@@ -6,6 +6,8 @@ local M = {}
 local function defaults()
     -- stylua: ignore
     return {
+        -- Can't use utils.abspath() here: utils.lua requires this module at load time, so this
+        -- module requiring utils.lua back would be a circular require.
         session_dir = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(vim.fn.stdpath('data'), 'possession'))),
         silent = false,
         load_silent = true,

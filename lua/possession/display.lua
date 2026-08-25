@@ -65,7 +65,7 @@ function M.parse_mksession(vimscript)
             if not is_absolute_path(path) and info.cwd then
                 path = vim.fs.joinpath(info.cwd, path)
             end
-            info.buffers[vim.fs.normalize(vim.fs.abspath(path))] = true
+            info.buffers[utils.abspath(path)] = true
         end),
         with_match('^cd (.*)$', function(m)
             if info.cwd then
@@ -159,8 +159,7 @@ function M.echo_sessions(opts)
             add { { 'Buffers:', 'Title' }, '\n' }
             local paths = {}
             for _, buf in ipairs(info[data].buffers) do
-                local path = opts.buffers_short and utils.relative_path(buf, data.cwd)
-                    or vim.fs.normalize(vim.fs.abspath(buf))
+                local path = opts.buffers_short and utils.relative_path(buf, data.cwd) or utils.abspath(buf)
                 table.insert(paths, path)
             end
             table.sort(paths)

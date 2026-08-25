@@ -34,7 +34,7 @@ end
 
 --- Vim expands the given dir, then converts it to an absolute path
 function M.absolute_dir(dir)
-    local p = vim.fs.normalize(vim.fs.abspath(vim.fn.expand(dir)))
+    local p = utils.abspath(vim.fn.expand(dir))
     if vim.endswith(p, '/') then
         p = p:sub(1, #p - 1)
     end

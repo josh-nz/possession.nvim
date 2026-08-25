@@ -12,7 +12,7 @@ function M.migrate(vimscript_path, opts)
         callback = nil,
     }, opts or {})
     -- If not provided fallback to filename without extension
-    local abs_vimscript_path = vim.fs.normalize(vim.fs.abspath(vimscript_path))
+    local abs_vimscript_path = utils.abspath(vimscript_path)
     local name = assert(opts.name and opts.name or vim.fn.fnamemodify(abs_vimscript_path, ':t:r'))
     local vimscript = vim.fn.readblob(vimscript_path)
 
