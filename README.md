@@ -1,4 +1,12 @@
-[![Lint](https://github.com/jedrzejboczar/possession.nvim/actions/workflows/lint.yml/badge.svg)](https://github.com/jedrzejboczar/possession.nvim/actions/workflows/lint.yml)
+# No longer maintained
+
+The original repository this code was forked from is [*no longer maintained*](https://github.com/jedrzejboczar/possession.nvim/issues/91).
+
+The branch `ai-remove-plenary` in this repo has attempted to remove the dependency on [`plenary.nvim`](https://github.com/nvim-lua/plenary.nvim)
+which is also no longer maintained. This was done with the use of AI and I do not vouch for the results. You are welcome to try it but I
+will not be supporting or maintaining this repo for anyone other than myself.
+
+The original README follows. Thank you for your attention, have a great day.
 
 # possession.nvim
 
