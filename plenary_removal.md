@@ -66,3 +66,51 @@ touches `config`/`utils`, and confirming `logging.to_all` and `utils.abspath` bo
 
 Re-ran the full end-to-end test suite from the second pass - all checks still pass after the
 refactor.
+
+
+## Fourth pass
+
+Reviewed whether `utils.abspath` and `paths.absolute_dir` duplicate each other, since both end up
+producing a normalized absolute path. They don't - `absolute_dir` is a thin, deliberate wrapper
+around `abspath`, not a separate reimplementation:
+
+```lua
+function M.absolute_dir(dir)
+    local p = utils.abspath(vim.fn.expand(dir))
+    if vim.endswith(p, '/') then
+        p = p:sub(1, #p - 1)
+    end
+    return p
+end
+```
+
+Two real differences, both intentional:
+
+- `absolute_dir` runs `dir` through `vim.fn.expand()` first. `vim.fs.abspath`/`normalize` only
+  expand `~` and `$VAR`-style env vars; `vim.fn.expand()` additionally resolves Vim-specific tokens
+  like `%`, `#`, `<cword>`, and chained modifiers (`:p:h` etc.) - useful because `absolute_dir`
+  takes arbitrary user-facing strings (autoload config values, workspace dirs).
+- `absolute_dir` strips a trailing `/` from the result; `utils.abspath` doesn't guarantee that (a
+  trailing separator in the input survives `vim.fs.joinpath`/`abspath`/`normalize` untouched).
+
+Considered folding `vim.fn.expand()` into `utils.abspath` itself and inlining everything into
+`absolute_dir`, then deleting the shared helper - rejected, for two reasons:
+
+- `utils.abspath` has 8 other call sites beyond `absolute_dir` (from the third pass); removing it
+  would reintroduce the exact duplication that pass eliminated.
+- More importantly, `vim.fn.expand()` performs wildcard/glob expansion, which would corrupt at
+  least one existing use: `session.lua`'s `M.list` builds a literal glob pattern via
+  `utils.abspath(config.session_dir, '*.json')`, relying on the `*` surviving so a later
+  `vim.fn.glob()` call can match against it. Tested `vim.fn.expand()` on such a pattern directly -
+  it eagerly expands the wildcard and returns every matched file joined into one newline-separated
+  string (e.g. `"C:\...\a.json\nC:\...\b.json"`) instead of leaving the pattern alone. Folding
+  `expand()` into the shared helper would have silently broken `session.list()`.
+
+Conclusion: kept the existing composition (`absolute_dir` wraps `abspath`), and made both
+docstrings explicit about the contract so this isn't rediscovered the hard way later:
+
+- `utils.abspath` - pure string manipulation (`vim.fs.joinpath`/`abspath`/`normalize`), no
+  filesystem access, no Vim-token/wildcard interpretation; explicitly safe to use on glob patterns.
+- `paths.absolute_dir` - for resolving a user-facing directory spec to a `cwd`-ready path; documents
+  what `vim.fn.expand()` buys it, and warns not to pass it a glob pattern, pointing to
+  `utils.abspath` as the non-expanding alternative.

@@ -273,7 +273,10 @@ function M.for_each_tab(tabs, fn)
     vim.api.nvim_set_current_tabpage(initial)
 end
 
---- Join path segments (if more than one given) and resolve to a normalized absolute path
+--- Join path segments (if more than one given) and resolve to a normalized absolute path.
+--- Pure string manipulation (vim.fs.joinpath/abspath/normalize) - does not touch the filesystem
+--- and does not interpret Vim-specific tokens like '%', '#' or wildcards (unlike vim.fn.expand()),
+--- so it's also safe to use on glob patterns (e.g. a trailing '*.json' segment survives untouched).
 ---@param ... string path segments, as for vim.fs.joinpath
 ---@return string
 function M.abspath(...)
