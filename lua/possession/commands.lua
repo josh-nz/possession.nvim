@@ -80,9 +80,18 @@ local function get_current()
     return name
 end
 
+-- Resolve a user-facing directory spec (e.g. from config or a command argument) to an absolute
+-- path with no trailing separator, suitable for use as a session `cwd` value. Runs `dir` through
+-- vim.fn.expand() first, so '~', env vars, and Vim tokens like '%'/'#' are resolved - do not pass
+-- a glob pattern here, as expand() would perform wildcard expansion instead of returning it as-is
+-- (see utils.abspath() for a pure, non-expanding alternative).
 ---@param dir string dir to get sessions for
 local function get_sessions_for_dir(dir)
-    return query.filter_by(query.as_list(), { cwd = paths.absolute_dir(dir) })
+    local abs_dir = utils.abspath(vim.fn.expand(dir))
+    if vim.endswith(abs_dir, '/') then
+        abs_dir = abs_dir:sub(1, #abs_dir - 1)
+    end
+    return query.filter_by(query.as_list(), { cwd = abs_dir })
 end
 
 ---@param sessions? table[] list of sessions from `as_list`
@@ -152,8 +161,7 @@ function M.load_last(session_type)
     elseif session_type then
         -- Something was returned from custom config function.
         if vim.fn.isdirectory(vim.fn.fnamemodify(session_type, ':p')) == 1 then
-            local abs = paths.absolute_dir(session_type)
-            last = get_last(get_sessions_for_dir(abs))
+            last = get_last(get_sessions_for_dir(session_type))
         else
             -- Try to load returned string as literal session name.
 

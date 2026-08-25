@@ -25,8 +25,9 @@ end
 ---@param sessions table[] list of sessions from `as_list`
 ---@param opts { cwd: string }
 function M.filter_by(sessions, opts)
-    -- Normalize both sides: `opts.cwd` may come from paths.absolute_dir() (slash-normalized via
-    -- vim.fs), while stored session `cwd`s may still use native (e.g. backslash on Windows) separators.
+    -- Normalize both sides: `opts.cwd` may come from commands.lua's get_sessions_for_dir()
+    -- (slash-normalized via vim.fs), while stored session `cwd`s may still use native
+    -- (e.g. backslash on Windows) separators.
     local cwd = utils.abspath(opts.cwd)
     return vim.tbl_filter(function(s)
         return utils.abspath(s.cwd) == cwd

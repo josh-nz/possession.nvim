@@ -114,3 +114,29 @@ docstrings explicit about the contract so this isn't rediscovered the hard way l
 - `paths.absolute_dir` - for resolving a user-facing directory spec to a `cwd`-ready path; documents
   what `vim.fn.expand()` buys it, and warns not to pass it a glob pattern, pointing to
   `utils.abspath` as the non-expanding alternative.
+
+Also proposed better names to make the two read as distinct on sight instead of relying on their
+docstrings: keep `utils.abspath` (already matches the "pure path arithmetic, no expansion"
+convention from other ecosystems, e.g. Python's `os.path.abspath`), and rename
+`paths.absolute_dir` to `paths.expand_dir` - names the thing that actually differentiates it (the
+`vim.fn.expand()` call) rather than the "produces an absolute path" property both functions share,
+and matches the plugin's own existing docstring wording ("Vim expands the given dir..."). Not
+applied - the rename became moot once `absolute_dir`'s only call site was removed (see below).
+
+
+## Fifth pass
+
+`commands.lua`'s `M.load_last` called `paths.absolute_dir(session_type)` and then passed the
+result into `get_sessions_for_dir(dir)` - which itself already calls `paths.absolute_dir(dir)` on
+whatever it's given. Simplified to just `get_sessions_for_dir(session_type)`, removing the
+redundant double-call (harmless since `absolute_dir` is idempotent on an already-canonical path,
+but pointless work).
+
+That left `get_sessions_for_dir` as the only call site of `paths.absolute_dir` anywhere in the
+codebase. Removed `paths.absolute_dir` entirely and inlined its body (and docstring) directly into
+`get_sessions_for_dir` in `commands.lua`. Also fixed a stale comment in `query.lua`'s `filter_by`
+that referenced `paths.absolute_dir()` by name, pointing it at `get_sessions_for_dir` instead.
+
+Verified: no remaining references to `absolute_dir` anywhere in `lua/`, and re-ran the end-to-end
+suite (session save/rename/delete/exists, `relative_path`, plus `commands.load_last` with a real
+directory to exercise the inlined path) - all pass.
