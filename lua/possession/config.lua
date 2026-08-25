@@ -1,14 +1,12 @@
 local M = {}
 
-local Path = require('plenary.path')
-
 -- Use a function to always get a new table, even if some deep field is modified,
 -- like `config.commands.save = ...`. Returning a "constant" still seems to allow
 -- the LSP completion to work.
 local function defaults()
     -- stylua: ignore
     return {
-        session_dir = (Path:new(vim.fn.stdpath('data')) / 'possession'):absolute(),
+        session_dir = vim.fs.joinpath(vim.fn.stdpath('data'), 'possession'),
         silent = false,
         load_silent = true,
         debug = false,
@@ -184,6 +182,8 @@ function M.setup(opts)
     for key, val in pairs(new_config) do
         config[key] = val
     end
+
+    config["session_dir"] = vim.fs.normalize(config["session_dir"])
 end
 
 -- Return the config table (getting completion!) but fall back to module methods.

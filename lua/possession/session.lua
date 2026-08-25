@@ -1,6 +1,5 @@
 local M = {}
 
-local Path = require('plenary.path')
 local config = require('possession.config')
 local utils = require('possession.utils')
 local plugins = require('possession.plugins')
@@ -375,10 +374,11 @@ function M.list(opts)
     local files_by_name = {}
 
     local sessions = {}
-    local glob = (Path:new(config.session_dir) / '*.json'):absolute()
+    local glob = vim.fs.joinpath(config.session_dir, '*.json')
     for _, file in ipairs(vim.fn.glob(glob, true, true)) do
         if vim.fn.filereadable(file) ~= 0 then
-            local data = vim.json.decode(Path:new(file):read())
+            local contents = paths.read_file(file)
+            local data = vim.json.decode(contents)
             sessions[file] = data
 
             files_by_name[data.name] = files_by_name[data.name] or {}
@@ -404,7 +404,8 @@ end
 function M.mksession()
     local tmp = vim.fn.tempname()
     vim.cmd('mksession! ' .. tmp)
-    return Path:new(tmp):read()
+    return read_file(vim.fs.normalize(tmp))
 end
+
 
 return M

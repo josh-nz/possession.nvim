@@ -82,7 +82,8 @@ end
 
 ---@param dir string dir to get sessions for
 local function get_sessions_for_dir(dir)
-    return query.filter_by(query.as_list(), { cwd = paths.absolute_dir(dir) })
+    local abs_dir = vim.fs.normalize(dir)
+    return query.filter_by(query.as_list(), { cwd = abs_dir })
 end
 
 ---@param sessions? table[] list of sessions from `as_list`
@@ -152,8 +153,7 @@ function M.load_last(session_type)
     elseif session_type then
         -- Something was returned from custom config function.
         if vim.fn.isdirectory(vim.fn.fnamemodify(session_type, ':p')) == 1 then
-            local abs = paths.absolute_dir(session_type)
-            last = get_last(get_sessions_for_dir(abs))
+            last = get_last(get_sessions_for_dir(session_type))
         else
             -- Try to load returned string as literal session name.
 
