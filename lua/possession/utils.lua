@@ -274,35 +274,41 @@ function M.for_each_tab(tabs, fn)
 end
 
 --- Make relative path (only if 'path' is child of 'rel_to' or 'force' is set), replace '~' unless normalize=false
----@param path string|Path
----@param rel_to string|Path
+---@param path string
+---@param rel_to string
 ---@param opts? { force?: boolean, normalize?: boolean } defaults to force=false, normalize=true
 ---@return string
 function M.relative_path(path, rel_to, opts)
-    local Path = require('vendor.plenary')
-
     opts = vim.tbl_extend('force', {
         force = false,
         normalize = true,
     }, opts or {})
 
-    path = Path:new(path)
-    rel_to = Path:new(rel_to)
+    local abs_path = vim.fs.normalize(vim.fs.abspath(path))
 
-    if opts.force or vim.startswith(path:absolute(), rel_to:absolute()) then
-        local cwd = rel_to:absolute()
-        if opts.normalize then
-            return path:normalize(cwd)
-        else
-            return path:make_relative(cwd).filename
-        end
-    else
-        if opts.normalize then
-            return path:normalize()
-        else
-            return path.filename
-        end
+    -- Try to make `path` relative to `rel_to`; unless forced, fall back to relative to the
+    -- actual cwd (matching plenary's Path:normalize() using its lazily-computed `_cwd`).
+    local rel = vim.fs.relpath(rel_to, path)
+    if not opts.force and not rel then
+        rel = vim.fs.relpath(vim.uv.cwd(), path)
     end
+    if rel then
+        return rel
+    end
+
+    if not opts.normalize then
+        return abs_path
+    end
+
+    -- Substitute the home directory with '~', but only when strictly nested under it
+    -- (matching plenary's behaviour of leaving the home dir itself untouched).
+    local home = vim.uv.os_homedir()
+    local rel_home = home and vim.fs.relpath(home, abs_path)
+    if rel_home and rel_home ~= '.' then
+        return '~/' .. rel_home
+    end
+
+    return abs_path
 end
 
 ---@param strings string[]

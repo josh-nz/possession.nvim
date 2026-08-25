@@ -1,6 +1,5 @@
 local M = {}
 
-local Path = require('vendor.plenary')
 local config = require('possession.config')
 local query = require('possession.query')
 local utils = require('possession.utils')
@@ -31,6 +30,12 @@ local function patch_treesitter_injections(buf)
     parser._injection_query = new_query
 end
 
+---@param p string
+---@return boolean
+local function is_absolute_path(p)
+    return p:match('^/') ~= nil or p:match('^%a:[\\/]') ~= nil
+end
+
 local function with_match(pattern, fn)
     return function(line)
         local m = line:match(pattern)
@@ -56,11 +61,11 @@ function M.parse_mksession(vimscript)
     local parsers = {
         with_match('^badd %S+ (.*)$', function(m)
             -- Paths in mksession are relative if they're under cwd, so convert to absolute
-            local path = Path:new(vim.fn.expand(m))
-            if not path:is_absolute() and info.cwd then
-                path = Path:new(info.cwd) / path
+            local path = vim.fn.expand(m)
+            if not is_absolute_path(path) and info.cwd then
+                path = vim.fs.joinpath(info.cwd, path)
             end
-            info.buffers[path:absolute()] = true
+            info.buffers[vim.fs.normalize(vim.fs.abspath(path))] = true
         end),
         with_match('^cd (.*)$', function(m)
             if info.cwd then
@@ -154,7 +159,8 @@ function M.echo_sessions(opts)
             add { { 'Buffers:', 'Title' }, '\n' }
             local paths = {}
             for _, buf in ipairs(info[data].buffers) do
-                local path = opts.buffers_short and utils.relative_path(buf, data.cwd) or Path:new(buf):absolute()
+                local path = opts.buffers_short and utils.relative_path(buf, data.cwd)
+                    or vim.fs.normalize(vim.fs.abspath(buf))
                 table.insert(paths, path)
             end
             table.sort(paths)

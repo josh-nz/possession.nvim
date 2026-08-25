@@ -1,6 +1,5 @@
 local M = {}
 
-local Path = require('vendor.plenary')
 local config = require('possession.config')
 local utils = require('possession.utils')
 local plugins = require('possession.plugins')
@@ -10,6 +9,14 @@ local state = {
     ---@type string?
     session_name = nil,
 }
+
+---@param path string
+---@param content string
+local function write_file(path, content)
+    local fd = assert(vim.uv.fs_open(path, 'w', 438))
+    assert(vim.uv.fs_write(fd, content, -1))
+    assert(vim.uv.fs_close(fd))
+end
 
 ---@return string?
 function M.get_session_name()
@@ -89,7 +96,7 @@ function M.save(name, opts)
         utils.clear_prompt()
         if ok then
             vim.fn.mkdir(config.session_dir, 'p')
-            path:write(vim.json.encode(session_data), 'w')
+            write_file(path, vim.json.encode(session_data))
 
             state.session_name = name
 
@@ -109,7 +116,7 @@ function M.save(name, opts)
     end
 
     -- ask for user confirmation if required
-    if path:exists() and not opts.no_confirm then
+    if vim.uv.fs_stat(path) and not opts.no_confirm then
         utils.prompt_yes_no(string.format('Overwrite session "%s"?', name), commit)
     else
         commit(true)
@@ -124,19 +131,19 @@ function M.rename(old_name, new_name)
 
     local old_path = paths.session(old_name)
     local new_path = paths.session(new_name)
-    if not old_path:exists() then
+    if not vim.uv.fs_stat(old_path) then
         utils.error('Session "%s" does not exist, no file %s', old_name, paths.session_short(old_name))
         return
     end
-    if new_path:exists() then
+    if vim.uv.fs_stat(new_path) then
         utils.error('Session "%s" already exists, delete it first.', paths.session_short(new_name))
         return
     end
 
-    local session_data = vim.json.decode(old_path:read())
+    local session_data = vim.json.decode(vim.fn.readblob(old_path))
     session_data.name = new_name
-    new_path:write(vim.json.encode(session_data), 'w')
-    vim.fn.delete(old_path:absolute())
+    write_file(new_path, vim.json.encode(session_data))
+    vim.fn.delete(old_path)
 
     if state.session_name == old_name then
         state.session_name = new_name
@@ -225,11 +232,11 @@ function M.load(name_or_data, opts)
     local path
     if type(name_or_data) == 'string' then
         path = paths.session(name_or_data)
-        if not path:exists() then
+        if not vim.uv.fs_stat(path) then
             utils.error('Cannot load session "%s" - it does not exist', name_or_data)
             return
         end
-        session_data = vim.json.decode(path:read())
+        session_data = vim.json.decode(vim.fn.readblob(path))
     else
         session_data = name_or_data
     end
@@ -275,7 +282,7 @@ function M.load(name_or_data, opts)
 
     -- update last session by updating modification time of session file (after any autosave)
     if path then
-        utils.touch(path:absolute())
+        utils.touch(path)
     end
 end
 
@@ -311,14 +318,14 @@ function M.delete(name, opts)
     local path = paths.session(name)
     local short = paths.session_short(name)
 
-    if not path:exists() then
-        utils.warn('Cannot delete session "%s" - it does not exist', path:absolute())
+    if not vim.uv.fs_stat(path) then
+        utils.warn('Cannot delete session "%s" - it does not exist', path)
         return
     end
 
     local commit = function(ok)
         if ok then
-            if vim.fn.delete(path:absolute()) ~= 0 then
+            if vim.fn.delete(path) ~= 0 then
                 utils.error('Failed to delete session: "%s"', short)
             else
                 if state.session_name == name then
@@ -347,11 +354,11 @@ end
 ---@param name string session name
 function M.exists(name)
     local path = paths.session(name)
-    if not path:exists() then
+    if not vim.uv.fs_stat(path) then
         return false
     end
     local data_name = vim.F.npcall(function()
-        return vim.json.decode(path:read()).name
+        return vim.json.decode(vim.fn.readblob(path)).name
     end)
     if not data_name then
         utils.warn('Could not read session file: %s', paths.session_short(name))
@@ -375,10 +382,10 @@ function M.list(opts)
     local files_by_name = {}
 
     local sessions = {}
-    local glob = (Path:new(config.session_dir) / '*.json'):absolute()
+    local glob = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(config.session_dir, '*.json')))
     for _, file in ipairs(vim.fn.glob(glob, true, true)) do
         if vim.fn.filereadable(file) ~= 0 then
-            local data = vim.json.decode(Path:new(file):read())
+            local data = vim.json.decode(vim.fn.readblob(file))
             sessions[file] = data
 
             files_by_name[data.name] = files_by_name[data.name] or {}
@@ -404,7 +411,7 @@ end
 function M.mksession()
     local tmp = vim.fn.tempname()
     vim.cmd('mksession! ' .. tmp)
-    return Path:new(tmp):read()
+    return vim.fn.readblob(tmp)
 end
 
 return M

@@ -1,14 +1,12 @@
 local M = {}
 
-local Path = require('vendor.plenary')
-
 -- Use a function to always get a new table, even if some deep field is modified,
 -- like `config.commands.save = ...`. Returning a "constant" still seems to allow
 -- the LSP completion to work.
 local function defaults()
     -- stylua: ignore
     return {
-        session_dir = (Path:new(vim.fn.stdpath('data')) / 'possession'):absolute(),
+        session_dir = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(vim.fn.stdpath('data'), 'possession'))),
         silent = false,
         load_silent = true,
         debug = false,

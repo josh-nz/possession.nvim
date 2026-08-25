@@ -53,9 +53,8 @@ use {
 }
 ```
 
-No other plugins are required - the small part of
-[plenary.nvim](https://github.com/nvim-lua/plenary.nvim)'s `Path` API that
-`possession` relies on is vendored in [lua/vendor/plenary.lua](lua/vendor/plenary.lua).
+No other plugins are required - `possession` uses only built-in Neovim APIs
+(`vim.fs`, `vim.uv`) for filesystem/path handling.
 
 ## Configuration
 

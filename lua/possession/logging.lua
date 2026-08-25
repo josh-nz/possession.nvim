@@ -1,6 +1,5 @@
 local M = {}
 
-local Path = require('vendor.plenary')
 local config = require('possession.config')
 
 local log_date_format = '%F %H:%M:%S'
@@ -26,7 +25,7 @@ local function get_logfile()
     -- Use default name
     local filename = config.logfile
     if type(filename) ~= 'string' then
-        filename = (Path:new(vim.fn.stdpath('log')) / 'possession.log'):absolute()
+        filename = vim.fs.normalize(vim.fs.abspath(vim.fs.joinpath(vim.fn.stdpath('log'), 'possession.log')))
     end
 
     local file, err = io.open(filename, 'a+')

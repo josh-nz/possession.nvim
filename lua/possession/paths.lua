@@ -2,14 +2,14 @@ local M = {}
 
 local config = require('possession.config')
 local utils = require('possession.utils')
-local Path = require('vendor.plenary')
 
 --- Get session path
 ---@param name string
+---@return string
 function M.session(name)
     -- Not technically need but should guard against potential errors
     assert(not vim.endswith(name, '.json'), 'Name should not end with .json')
-    return Path:new(config.session_dir) / (utils.percent_encode(name) .. '.json')
+    return vim.fs.joinpath(config.session_dir, utils.percent_encode(name) .. '.json')
 end
 
 --- Get short session path for printing
@@ -22,7 +22,7 @@ end
 ---@deprecated
 function M.session_name(path)
     vim.deprecate('paths.session_name()', 'session.list() and get name from data', '?', 'possession')
-    return vim.json.decode(Path:new(path):read()).name
+    return vim.json.decode(vim.fn.readblob(path)).name
 end
 
 --- Get global cwd for use as session name
@@ -34,8 +34,8 @@ end
 
 --- Vim expands the given dir, then converts it to an absolute path
 function M.absolute_dir(dir)
-    local p = Path:new(vim.fn.expand(dir)):absolute()
-    if vim.endswith(p, Path.path.sep) then
+    local p = vim.fs.normalize(vim.fs.abspath(vim.fn.expand(dir)))
+    if vim.endswith(p, '/') then
         p = p:sub(1, #p - 1)
     end
     return p
