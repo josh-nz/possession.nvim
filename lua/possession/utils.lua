@@ -279,7 +279,7 @@ end
 ---@param opts? { force?: boolean, normalize?: boolean } defaults to force=false, normalize=true
 ---@return string
 function M.relative_path(path, rel_to, opts)
-    local Path = require('plenary.path')
+    local Path = require('vendor.plenary')
 
     opts = vim.tbl_extend('force', {
         force = false,

@@ -1,6 +1,6 @@
 local M = {}
 
-local Path = require('plenary.path')
+local Path = require('vendor.plenary')
 local config = require('possession.config')
 local utils = require('possession.utils')
 local plugins = require('possession.plugins')

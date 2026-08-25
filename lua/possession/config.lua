@@ -1,6 +1,6 @@
 local M = {}
 
-local Path = require('plenary.path')
+local Path = require('vendor.plenary')
 
 -- Use a function to always get a new table, even if some deep field is modified,
 -- like `config.commands.save = ...`. Returning a "constant" still seems to allow

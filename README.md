@@ -50,12 +50,12 @@ With [packer.nvim](https://github.com/wbthomason/packer.nvim):
 ```lua
 use {
     'jedrzejboczar/possession.nvim',
-    requires = { 'nvim-lua/plenary.nvim' },
 }
 ```
 
-Or with other package managers/manually, but make sure
-[plenary.nvim](https://github.com/nvim-lua/plenary.nvim) is installed.
+No other plugins are required - the small part of
+[plenary.nvim](https://github.com/nvim-lua/plenary.nvim)'s `Path` API that
+`possession` relies on is vendored in [lua/vendor/plenary.lua](lua/vendor/plenary.lua).
 
 ## Configuration
 

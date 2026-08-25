@@ -1,8 +1,8 @@
 local M = {}
 
-local Path = require('plenary.path')
 local config = require('possession.config')
 local utils = require('possession.utils')
+local Path = require('vendor.plenary')
 
 --- Get session path
 ---@param name string
